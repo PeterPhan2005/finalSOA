@@ -8,7 +8,7 @@ const api = axios.create({
 // Add request interceptor to attach JWT token from localStorage
 api.interceptors.request.use(
     (config) => {
-        // Get auth data from localStorage
+        // ALWAYS read fresh from localStorage on EVERY request
         const authData = localStorage.getItem("auth");
         console.log('Interceptor - auth data from localStorage:', authData ? 'exists' : 'missing');
         
@@ -29,9 +29,13 @@ api.interceptors.request.use(
                 }
             } catch (error) {
                 console.error("Error parsing auth data:", error);
+                // Clear invalid auth data
+                localStorage.removeItem("auth");
             }
         } else {
             console.log('Interceptor - No auth data in localStorage');
+            // Make sure no old token is attached
+            delete config.headers.Authorization;
         }
         
         console.log('API Request:', {

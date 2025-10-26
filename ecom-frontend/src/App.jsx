@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import './App.css'
 import Products from './components/products/Products'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
@@ -27,17 +27,28 @@ import Profile from './components/profile/Profile'
 function App() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.cart);
 
-  // Load cart from server if user is logged in
+  // Only load cart from server if user is logged in AND cart is empty
+  // This prevents duplicate calls after login (login action already loads cart)
   useEffect(() => {
-    if (user && user.id) {
-      dispatch(getUserCart()).catch(() => {
-        // If error loading cart, clear it
-        dispatch({ type: "CLEAR_CART" });
-        localStorage.removeItem("cartItems");
-      });
+    const shouldLoadCart = user && user.id && (!cartItems || cartItems.length === 0);
+    
+    if (shouldLoadCart) {
+      // Add delay to ensure token is ready
+      const timer = setTimeout(() => {
+        console.log("App.jsx - Loading cart for logged-in user");
+        dispatch(getUserCart()).catch((error) => {
+          console.log("App.jsx - Error loading cart:", error);
+          // If error loading cart, clear it
+          dispatch({ type: "CLEAR_CART" });
+          localStorage.removeItem("cartItems");
+        });
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user?.id, dispatch]);
+  }, [user?.id, dispatch, cartItems?.length]);
 
   return (
     <React.Fragment>

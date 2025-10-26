@@ -234,14 +234,16 @@ export const authenticateSignInUser
             console.log("=== LOGIN RESPONSE ===");
             console.log("Full response data:", JSON.stringify(data, null, 2));
             console.log("data.jwtToken:", data.jwtToken);
-            console.log("Type of data:", typeof data);
-            console.log("Keys in data:", Object.keys(data));
             
-            dispatch({ type: "LOGIN_USER", payload: data });
+            // CRITICAL STEP 1: Save to localStorage FIRST
             localStorage.setItem("auth", JSON.stringify(data));
-            console.log("Auth saved to localStorage");
+            console.log("Auth saved to localStorage BEFORE dispatch");
             
-            // Verify localStorage
+            // CRITICAL STEP 2: Dispatch to Redux store
+            dispatch({ type: "LOGIN_USER", payload: data });
+            console.log("User dispatched to Redux store");
+            
+            // CRITICAL STEP 3: Verify localStorage
             const savedAuth = localStorage.getItem("auth");
             console.log("Verify - auth in localStorage:", savedAuth ? 'exists' : 'missing');
             if (savedAuth) {
@@ -249,9 +251,14 @@ export const authenticateSignInUser
                 console.log("Verify - parsed auth has jwtToken:", !!parsed.jwtToken);
             }
             
-            // Load user's cart from server after login
+            // CRITICAL STEP 4: Wait to ensure everything is ready
+            await new Promise(resolve => setTimeout(resolve, 150));
+            
+            // CRITICAL STEP 5: Load user's cart from server after login
             try {
+                console.log("Now loading cart with fresh token...");
                 await dispatch(getUserCart());
+                console.log("Cart loaded successfully");
             } catch (cartError) {
                 console.log("Error loading cart:", cartError);
                 // If cart doesn't exist or error, clear local cart
@@ -261,7 +268,11 @@ export const authenticateSignInUser
             
             reset();
             toast.success("Login Success");
-            navigate("/");
+            
+            // CRITICAL STEP 6: Navigate after everything is set up
+            setTimeout(() => {
+                navigate("/");
+            }, 100);
         } catch (error) {
             console.log(error);
             toast.error(error?.response?.data?.message || "Internal Server Error");
