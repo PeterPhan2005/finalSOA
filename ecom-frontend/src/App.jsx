@@ -27,12 +27,12 @@ import Profile from './components/profile/Profile'
 function App() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { cartItems } = useSelector((state) => state.cart);
+  const { cart } = useSelector((state) => state.cart || { cart: [] });
 
   // Only load cart from server if user is logged in AND cart is empty
   // This prevents duplicate calls after login (login action already loads cart)
   useEffect(() => {
-    const shouldLoadCart = user && user.id && (!cartItems || cartItems.length === 0);
+    const shouldLoadCart = user && user.id && (!cart || cart.length === 0);
     
     if (shouldLoadCart) {
       // Add delay to ensure token is ready
@@ -48,7 +48,7 @@ function App() {
       
       return () => clearTimeout(timer);
     }
-  }, [user?.id, dispatch, cartItems?.length]);
+  }, [user?.id, dispatch, cart?.length]);
 
   return (
     <React.Fragment>
